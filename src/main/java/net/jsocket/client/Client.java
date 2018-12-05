@@ -2,6 +2,7 @@ package net.jsocket.client;
 
 import net.jsocket.*;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.SecretKey;
 import java.io.*;
 import java.net.*;
@@ -65,8 +66,11 @@ public class Client implements Constants {
             output.writeObject(new EncryptedCarrier(data, symmetricKey));
             output.flush();
         } catch (IOException e) {
+            //TODO Exception handling
             System.out.println("Sending error: " + e.getMessage());
             stop();
+        } catch (BadPaddingException e) {
+            e.printStackTrace();
         }
     }
 
@@ -76,6 +80,7 @@ public class Client implements Constants {
             out.writeObject(dataCarrier);
             out.flush();
         } catch (IOException e) {
+            //TODO Exception handling
             System.out.println("Sending error: " + e.getMessage());
             stop();
         }
@@ -128,7 +133,7 @@ public class Client implements Constants {
             if (streamOut != null) streamOut.close();
             if (socket != null) socket.close();
         } catch (IOException e) {
-            System.out.println("Error closing ...");
+            // we don't care
         }
         client.close();
         clientClosedHandle.handle(disconnectReason);

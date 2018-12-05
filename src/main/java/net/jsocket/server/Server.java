@@ -32,6 +32,7 @@ public final class Server implements Runnable {
         this.newConnectionHandles = new ArrayList<>();
         this.clientDisconnectedHandles = new ArrayList<>();
         try {
+            //TODO Exception handling
             System.out.println("Binding to port " + port + ", please wait  ...");
             server = new ServerSocket(port);
             System.out.println("Server started: " + server);
@@ -64,6 +65,7 @@ public final class Server implements Runnable {
                 System.out.println("Waiting for a desktop ...");
                 addThread(server.accept());
             } catch (IOException e) {
+                //TODO Exception handling
                 System.out.println("Server accept error: " + e);
                 stop();
             }

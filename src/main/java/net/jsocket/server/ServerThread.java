@@ -2,9 +2,11 @@ package net.jsocket.server;
 
 import net.jsocket.*;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.SecretKey;
 import java.io.*;
 import java.net.*;
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -39,6 +41,7 @@ public class ServerThread implements Runnable, Constants {
             streamOut = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
             thread.start();
         } catch (IOException e) {
+            //TODO Exception handling
             e.printStackTrace();
         }
     }
@@ -57,11 +60,14 @@ public class ServerThread implements Runnable, Constants {
             output.writeObject(new EncryptedCarrier(data, symmetricKey));
             output.flush();
         } catch (IOException e) {
+            //TODO Exception handling
             System.out.println(ID + " ERROR sending: " + e.getMessage());
             if (running) {
                 server.remove(ID, DisconnectReason.ServerError);
                 close(DisconnectReason.ServerError);
             }
+        } catch (BadPaddingException e) {
+            e.printStackTrace();
         }
     }
 
@@ -94,12 +100,13 @@ public class ServerThread implements Runnable, Constants {
                 }
             } while (!hasKey);
         } catch (NoSuchAlgorithmException e) {
+            //TODO Exception handling
             e.printStackTrace();
         } catch (IOException e) {
             System.out.println(ID + " ERROR reading: " + e.getMessage());
             server.remove(ID, DisconnectReason.ServerError);
             close(DisconnectReason.NetworkError);
-        } catch (ClassNotFoundException e) {
+        } catch (ClassNotFoundException | BadPaddingException | InvalidKeyException e) {
             e.printStackTrace();
             close(DisconnectReason.ServerError);
         }
@@ -110,10 +117,11 @@ public class ServerThread implements Runnable, Constants {
                 DataCarrier data = ((EncryptedCarrier) input.readObject()).getDataCarrier(symmetricKey);
                 server.handle(data);
             } catch (IOException e) {
+                //TODO Exception handling
                 System.out.println(ID + " ERROR reading: " + e.getMessage());
                 server.remove(ID, DisconnectReason.ServerError);
                 close(DisconnectReason.NetworkError);
-            } catch (ClassNotFoundException e) {
+            } catch (ClassNotFoundException | BadPaddingException | InvalidKeyException e) {
                 e.printStackTrace();
                 close(DisconnectReason.ServerError);
             }
@@ -132,6 +140,7 @@ public class ServerThread implements Runnable, Constants {
             if (streamIn != null) streamIn.close();
             if (streamOut != null) streamOut.close();
         } catch (IOException e) {
+            //TODO Exception handling
             e.printStackTrace();
         }
     }

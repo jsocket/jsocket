@@ -2,10 +2,12 @@ package net.jsocket.client;
 
 import net.jsocket.*;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.io.*;
 import java.net.*;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 
@@ -42,6 +44,7 @@ public class ClientThread implements Runnable {
         try {
             streamIn = new DataInputStream(socket.getInputStream());
         } catch (IOException e) {
+            //TODO Exception handling
             System.out.println("Error getting input stream: " + e);
             client.stop(DisconnectReason.ClientError);
         }
@@ -52,7 +55,7 @@ public class ClientThread implements Runnable {
         try {
             if (streamIn != null) streamIn.close();
         } catch (IOException e) {
-            System.out.println("Error closing input stream: " + e);
+            // we don't care
         }
     }
 
@@ -89,10 +92,10 @@ public class ClientThread implements Runnable {
                     hasKey = true;
                 }
             } catch (IOException e) {
+                //TODO Exception handling
                 System.out.println("Client Listening error: " + e.getMessage());
-                System.exit(1);
                 client.stop(DisconnectReason.NetworkError);
-            } catch (ClassNotFoundException | ClassCastException | NoSuchAlgorithmException e) {
+            } catch (ClassNotFoundException | ClassCastException | NoSuchAlgorithmException | BadPaddingException e) {
                 e.printStackTrace();
             }
         } while (!hasKey);
@@ -106,9 +109,10 @@ public class ClientThread implements Runnable {
                 System.out.println("Just got a new object: " + data.getData().getDescription());
                 client.handle(data);
             } catch (IOException e) {
+                //TODO Exception handling
                 System.out.println("Listening error: " + e.getMessage());
                 client.stop(DisconnectReason.NetworkError);
-            } catch (ClassNotFoundException | ClassCastException e) {
+            } catch (ClassNotFoundException | ClassCastException | BadPaddingException | InvalidKeyException e) {
                 e.printStackTrace();
             }
         } while (running);
