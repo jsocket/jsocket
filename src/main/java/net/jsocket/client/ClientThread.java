@@ -1,49 +1,54 @@
 package net.jsocket.client;
 
-import net.jsocket.DataCarrier;
-import net.jsocket.SocketPeerID;
+import net.jsocket.*;
 
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 import java.io.*;
 import java.net.*;
+import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 
 /**
  * This thread is responsible for listening to any messages coming in from the server
  */
-public class ClientThread extends Thread {
+@SuppressWarnings("WeakerAccess")
+public class ClientThread implements Runnable {
     private Socket socket;
     private Client client;
     private DataInputStream streamIn = null;
     private SocketPeerID ID;
+    private volatile boolean running = true;
+    private ClientConnectionHandle clientInitialised;
+    private SecretKey symmetricKey;
 
     /**
      * The default constructor
-     * @param _client The managing client
-     * @param _socket The socket to the server
+     *
+     * @param _client           The managing client
+     * @param _socket           The socket to the server
+     * @param clientInitialised Fires when the client establishes connection to the server and receives a clientID
      */
-    public ClientThread(Client _client, Socket _socket) {
+    public ClientThread(Client _client, Socket _socket, ClientConnectionHandle clientInitialised) {
         client = _client;
         socket = _socket;
         open();
-        start();
+        Thread thread = new Thread(this);
+        thread.start();
+        this.clientInitialised = clientInitialised;
     }
 
-    /**
-     * Open the socket
-     */
-    public void open() {
+    private void open() {
         try {
             streamIn = new DataInputStream(socket.getInputStream());
         } catch (IOException e) {
             System.out.println("Error getting input stream: " + e);
-            client.stop();
+            client.stop(DisconnectReason.ClientError);
         }
     }
 
-    /**
-     * Close the socket
-     */
-    public void close() {
+    void close() {
+        running = false;
         try {
             if (streamIn != null) streamIn.close();
         } catch (IOException e) {
@@ -53,33 +58,59 @@ public class ClientThread extends Thread {
 
     /**
      * Get the clientID of this client
+     *
      * @return UUID of this client
      */
     public UUID getID() {
-        return ID.getSenderID();
+        return ID.getPeerID();
     }
 
-    SocketPeerID getSocketPeerID() {
+    /**
+     * Gets the clientID of this client
+     * @return SocketPeerID of this client
+     */
+    public SocketPeerID getSocketPeerID() {
         return ID;
     }
 
     public void run() {
-        //noinspection InfiniteLoopStatement
-        while (true) {
+        boolean hasKey = false;
+        do {
             try {
                 ObjectInputStream input = new ObjectInputStream(streamIn);
                 DataCarrier data = (DataCarrier) input.readObject();
-                if (data.getRecipientID() == SocketPeerID.NewClient && data.getConversationReason() == DataCarrier.ConversationReason.ClientIDMessage) {
-                    ID = new SocketPeerID((UUID) data.getData());
-                } else {
-                    client.handle(data);
+                if (data.getData() instanceof PublicKeyMessage) {
+                    System.out.println("Got a publicKey");
+                    symmetricKey = KeyGenerator.getInstance("AES").generateKey();
+                    client.setSymmetricKey(symmetricKey);
+                    PublicKeyMessage pkm = (PublicKeyMessage) data.getData();
+                    ID = pkm.getNewClientID();
+                    client.sendSymmetricKey(new DataCarrier("symmetricKey", Direction.ToServer, ConversationReason.SymmetricKey, ID, new KeyExchangeMessage(symmetricKey, pkm.getPublicKey())));
+                    hasKey = true;
                 }
             } catch (IOException e) {
+                System.out.println("Client Listening error: " + e.getMessage());
+                System.exit(1);
+                client.stop(DisconnectReason.NetworkError);
+            } catch (ClassNotFoundException | ClassCastException | NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            }
+        } while (!hasKey);
+
+        clientInitialised.handle(ID.getPeerID());
+
+        do {
+            try {
+                ObjectInputStream input = new ObjectInputStream(streamIn);
+                DataCarrier data = ((EncryptedCarrier) input.readObject()).getDataCarrier(symmetricKey);
+                System.out.println("Just got a new object: " + data.getData().getDescription());
+                client.handle(data);
+            } catch (IOException e) {
                 System.out.println("Listening error: " + e.getMessage());
-                client.stop();
+                client.stop(DisconnectReason.NetworkError);
             } catch (ClassNotFoundException | ClassCastException e) {
                 e.printStackTrace();
             }
-        }
+        } while (running);
     }
 }

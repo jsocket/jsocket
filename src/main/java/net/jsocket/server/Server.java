@@ -1,14 +1,10 @@
 package net.jsocket.server;
 
-import net.jsocket.DataCarrier;
-import net.jsocket.Handle;
-import net.jsocket.SocketPeerID;
+import net.jsocket.*;
 
 import java.net.*;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * The socket server object
@@ -17,14 +13,24 @@ public final class Server implements Runnable {
     private ArrayList<ServerThread> clients = new ArrayList<>();
     private ServerSocket server = null;
     private Thread thread = null;
-    private HashMap<String, Handle> handles;
+    private HashMap<String, MessageHandle> messageHandles;
+    private ArrayList<ClientConnectionHandle> newConnectionHandles;
+    private ArrayList<ClientConnectionHandle> clientDisconnectedHandles;
+    private Timer keepAliveTimer = new Timer();
+    private volatile boolean shouldRun = false;
+    private volatile boolean running = false;
+    private final int port;
 
     /**
      * Initialises this Server as standard socket server
+     *
      * @param port The port to listen on
      */
     public Server(int port) {
-        handles = new HashMap<>();
+        messageHandles = new HashMap<>();
+        this.port = port;
+        this.newConnectionHandles = new ArrayList<>();
+        this.clientDisconnectedHandles = new ArrayList<>();
         try {
             System.out.println("Binding to port " + port + ", please wait  ...");
             server = new ServerSocket(port);
@@ -35,8 +41,25 @@ public final class Server implements Runnable {
         }
     }
 
+    /**
+     * Gets the port this server listens on
+     * @return Integer of this port
+     */
+    public int getPort() {
+        return port;
+    }
+
+    /**
+     * Specifies whether the server is running
+     * @return boolean if the server is running
+     */
+    public boolean isRunning() {
+        return running;
+    }
+
     public void run() {
-        while (thread != null) {
+        running = true;
+        while (shouldRun) {
             try {
                 System.out.println("Waiting for a desktop ...");
                 addThread(server.accept());
@@ -45,25 +68,21 @@ public final class Server implements Runnable {
                 stop();
             }
         }
+        running = false;
+        thread = null;
     }
 
-    /**
-     * Asynchronously start the server
-     */
-    public void start() {
+    private void start() {
         if (thread == null) {
             thread = new Thread(this);
+            shouldRun = true;
             thread.start();
         }
     }
 
-    /**
-     * Asynchronously stops the server
-     */
-    public void stop() {
-        if (thread != null) {
-            thread.stop();
-            thread = null;
+    private void stop() {
+        if (thread != null && running) {
+            shouldRun = false;
         }
     }
 
@@ -83,64 +102,73 @@ public final class Server implements Runnable {
 
     /**
      * Adds a message handler function
-     * @param name The message name
-     * @param handle THe function to be caller
+     *
+     * @param name   The message name
+     * @param messageHandle THe function to be caller
      */
-    public void addHandle(String name, Handle handle) {
-        handles.put(name, handle);
+    public void addHandle(String name, MessageHandle messageHandle) {
+        messageHandles.put(name, messageHandle);
+    }
+
+    /**
+     * Changes the current newConnectionHandle
+     * @param newConnectionHandle The method to be called when new client connects
+     */
+    public void setNewConnectionHandle(ClientConnectionHandle newConnectionHandle) {
+        this.newConnectionHandles.add(newConnectionHandle);
+    }
+
+    /**
+     * Changes the current clientDisconnectedHandle
+     * @param clientDisconnectedHandle The method to be called when a client disconnects
+     */
+    public void setClientDisconnectedHandle(ClientConnectionHandle clientDisconnectedHandle) {
+        this.clientDisconnectedHandles.add(clientDisconnectedHandle);
     }
 
     synchronized void handle(DataCarrier data) {
-        if (handles.containsKey(data.getName())) {
-            handles.get(data.getName()).handle(data);
+        System.out.println("Handling message name " + data.getName());
+        System.out.println(data.getData());
+        if (messageHandles.containsKey(data.getName())) {
+            messageHandles.get(data.getName()).handle(data);
         }
     }
 
     /**
      * Disconnects a client
+     *
      * @param ID The clientID of the client to be disconnected
+     * @param disconnectReason The {@link DisconnectReason DisconnectReason} why it happened
      */
-    public synchronized void remove(UUID ID) {
+    public synchronized void remove(UUID ID, DisconnectReason disconnectReason) {
         int pos = clientPos(ID);
         if (pos >= 0) {
             ServerThread toTerminate = clients.get(pos);
             System.out.println("Removing desktop thread " + ID + " at " + pos);
             if (pos < clients.size()) clients.remove(pos);
-            try {
-                toTerminate.close();
-            } catch (IOException e) {
-                System.out.println("Error closing thread: " + e);
-            }
-            toTerminate.stop();
+            toTerminate.close(disconnectReason);
         }
+        for (ClientConnectionHandle handle : clientDisconnectedHandles) handle.handle(ID);
     }
 
     private void addThread(Socket socket) {
         System.out.println("Client accepted: " + socket);
         ServerThread thread = new ServerThread(this, socket);
         clients.add(thread);
-        try {
-            thread.open();
-            thread.start();
-        } catch (IOException e) {
-            System.out.println("Error opening thread: " + e);
-        }
+        for (ClientConnectionHandle handle : newConnectionHandles) handle.handle(thread.getID());
     }
 
     /**
      * Sends a message to all connected clients
-     * @param name The message name
+     *
+     * @param name   The message name
      * @param sender The original message sender
-     * @param data The message data
+     * @param data   The message data
      */
-    public void broadcast(String name, SocketPeerID sender, Serializable data) {
-        for (ServerThread client : clients) client.send(
-                new DataCarrier(
-                        name,
-                        DataCarrier.Direction.ToClient,
-                        DataCarrier.ConversationOrigin.ClientBroadcast,
-                        sender,
-                        new SocketPeerID(client.getID()),
-                        data));
+    public void broadcast(String name, SocketPeerID sender, Message data) {
+        System.out.println("Broadcasting message "+data.getDescription());
+        for (ServerThread client : clients)
+            if (client.getID() != sender.getPeerID())
+                client.send(new DataCarrier(name, Direction.ToClient, ConversationOrigin.ClientBroadcast, sender, new SocketPeerID(client.getID()), data));
     }
 }
