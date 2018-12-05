@@ -1,0 +1,15 @@
+net/jsocket/SocketPeerID.class
+net/jsocket/DataCarrier.class
+net/jsocket/server/ServerThread.class
+net/jsocket/ConversationOrigin.class
+net/jsocket/DisconnectMessage.class
+net/jsocket/ConversationReason.class
+net/jsocket/Direction.class
+net/jsocket/client/ClientThread.class
+net/jsocket/Handle.class
+net/jsocket/PeerIDType.class
+net/jsocket/ClientConnectionHandle.class
+net/jsocket/TextMessage.class
+net/jsocket/client/Client.class
+net/jsocket/server/Server.class
+net/jsocket/DisconnectReason.class

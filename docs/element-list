@@ -1,3 +1,4 @@
 net.jsocket
 net.jsocket.client
 net.jsocket.server
+net.jsocket.test
