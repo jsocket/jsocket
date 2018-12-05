@@ -7,6 +7,16 @@ It just does, don't touch it! :)
 # Docs?
 [Here](https://docs.jsocket.net)!
 
+# What's in store?
+- [x] Get data from client to server
+- [x] Get **a lot** *(50MB, to be precise)* of data from client to server
+- [x] Create a demo-slash-test project
+- [ ] Write easy-to-read code
+- [ ] Clean up the spilled spaghetti
+- [x] Get some security in place
+- [ ] Improve performance
+- [ ] Find more TODOs
+
 # FAQ
 1. Q: Are you good at writing READMEs?  
    A: No...
