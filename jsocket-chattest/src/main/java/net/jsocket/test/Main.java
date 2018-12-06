@@ -43,14 +43,12 @@ public class Main {
 
     private static void server_chatMessageHandle(DataCarrier dataCarrier) {
         if (dataCarrier.getConversationOrigin() == ConversationOrigin.ClientBroadcast) {
-            server.broadcast("chatMessage", dataCarrier.getSenderID(), dataCarrier.getData());
+            server.broadcast("chatMessage", dataCarrier.getSenderID(), dataCarrier.getData(), true);
         }
     }
 
     private static void server_payloadTestHandle(DataCarrier dataCarrier) {
-
         PayloadTest payloadTest = (PayloadTest) dataCarrier.getData();
-        Thread verifyThread = new Thread(payloadTest);
-        verifyThread.start();
+        server.broadcast("chatMessage", dataCarrier.getSenderID(), new PayloadSentChatItem(dataCarrier.getSenderID().getPeerID(), payloadTest.getSize(), payloadTest.verify()), true);
     }
 }

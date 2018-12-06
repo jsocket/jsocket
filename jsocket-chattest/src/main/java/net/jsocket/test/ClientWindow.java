@@ -8,6 +8,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
+import java.text.ParseException;
 
 public class ClientWindow extends JFrame {
 
@@ -18,6 +19,7 @@ public class ClientWindow extends JFrame {
     private JScrollPane chatPane;
     private JTextArea chatArea;
     private JButton payloadTestButton;
+    private JSpinner testPayloadByteSizeSpinner;
     Client client;
 
     public ClientWindow(String host, int port) {
@@ -27,7 +29,7 @@ public class ClientWindow extends JFrame {
         pack();
         chatListModel = new DefaultListModel();
         chatList.setModel(chatListModel);
-        client = new Client(host, port, peerID->chatList.setCellRenderer(new ChatItemRenderer(peerID.toString())), disconnectReason -> dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING)));
+        client = new Client(host, port, peerID -> chatList.setCellRenderer(new ChatItemRenderer(peerID.toString())), disconnectReason -> dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING)));
         client.addHandle("chatMessage", this::client_chatMessageHandle);
         sendButton.addActionListener(this::sendButton_click);
         payloadTestButton.addActionListener(this::payloadTestButton_click);
@@ -45,20 +47,19 @@ public class ClientWindow extends JFrame {
                 send();
             }
         });
+        testPayloadByteSizeSpinner.setValue(50000000);
     }
 
     private void payloadTestButton_click(ActionEvent actionEvent) {
-        System.out.println("Begin send test payload");
-        client.send(new DataCarrier("payloadTest", Direction.ToServer, ConversationOrigin.ClientToServer, new SocketPeerID(client.getClientID()), SocketPeerID.Server, new PayloadTest(50000000)));
-        System.out.println("Payload sent");
+        sendPayload();
     }
 
     private void sendButton_click(ActionEvent e) {
         send();
     }
 
-    public void chatArea_keyTyped(KeyEvent evt){
-        if (evt.getKeyCode() == KeyEvent.VK_ENTER){
+    public void chatArea_keyTyped(KeyEvent evt) {
+        if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
             send();
         }
     }
@@ -72,12 +73,18 @@ public class ClientWindow extends JFrame {
         chatArea.setText("");
     }
 
+    private void sendPayload() {
+        System.out.println("Begin send test payload");
+        client.send(new DataCarrier("payloadTest", Direction.ToServer, ConversationOrigin.ClientToServer, new SocketPeerID(client.getClientID()), SocketPeerID.Server, new PayloadTest((Integer) testPayloadByteSizeSpinner.getValue())));
+        System.out.println("Payload sent");
+    }
+
     private void client_chatMessageHandle(DataCarrier dataCarrier) {
-        try {
+        if (dataCarrier.getData() instanceof TextMessage) {
             TextMessage message = (TextMessage) dataCarrier.getData();
             chatListModel.addElement(new ChatItem(dataCarrier.getSenderID().getPeerID().toString(), message.getMessage(), message.getTimestamp()));
-        } catch (ClassCastException e) {
-            System.out.println("Received data is not a TextMessage");
+        } else if (dataCarrier.getData() instanceof PayloadSentChatItem) {
+            chatListModel.addElement(dataCarrier.getData());
         }
 
         chatPane.getVerticalScrollBar().setValue(chatPane.getHorizontalScrollBar().getMaximum());

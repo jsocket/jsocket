@@ -33,7 +33,10 @@ public class ServerWindow extends JFrame {
         this.server = server;
         this.server.setNewConnectionHandle(clientID -> clientsListModel.addElement(clientID));
         this.server.setClientDisconnectedHandle(clientID -> clientsListModel.removeElement(clientID));
-        console = new Client("localhost", server.getPort(), clientID -> chatList.setCellRenderer(new ChatItemRenderer(clientID.toString())), disconnectReason -> hide());
+        console = new Client("localhost", server.getPort(), clientID -> {
+            chatList.setCellRenderer(new ChatItemRenderer(clientID.toString()));
+            clientsList.setCellRenderer(new UUIDTextRenderer(clientID));
+        }, disconnectReason -> hide());
         setContentPane(root);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         pack();
@@ -73,24 +76,14 @@ public class ServerWindow extends JFrame {
         chatArea.setText("");
     }
 
-    private void server_chatMessageHandle(DataCarrier dataCarrier) {
-        if (dataCarrier.getConversationOrigin()==ConversationOrigin.ClientBroadcast) {
-            server.broadcast("chatMessage", dataCarrier.getSenderID(), dataCarrier.getData());
-        }
-    }
-
     private void console_chatMessageHandle(DataCarrier dataCarrier) {
-        try {
+        if (dataCarrier.getData() instanceof TextMessage) {
             TextMessage message = (TextMessage) dataCarrier.getData();
             chatListModel.addElement(new ChatItem(dataCarrier.getSenderID().getPeerID().toString(), message.getMessage(), message.getTimestamp()));
-        } catch (ClassCastException e) {
-            System.out.println("Received data is not a TextMessage");
+        } else if (dataCarrier.getData() instanceof PayloadSentChatItem) {
+            chatListModel.addElement(dataCarrier.getData());
         }
 
-        chatPane.getVerticalScrollBar().addAdjustmentListener(new AdjustmentListener() {
-            public void adjustmentValueChanged(AdjustmentEvent e) {
-                e.getAdjustable().setValue(e.getAdjustable().getMaximum());
-            }
-        });
+        chatPane.getVerticalScrollBar().setValue(chatPane.getHorizontalScrollBar().getMaximum());
     }
 }

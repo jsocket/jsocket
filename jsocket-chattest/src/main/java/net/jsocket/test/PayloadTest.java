@@ -2,7 +2,7 @@ package net.jsocket.test;
 
 import net.jsocket.Message;
 
-public class PayloadTest implements Message, Runnable {
+public class PayloadTest implements Message {
     private final byte[] data;
     private final int size;
 
@@ -15,16 +15,21 @@ public class PayloadTest implements Message, Runnable {
         }
     }
 
-    private boolean verify() {
+    private boolean isValid() {
         for (int i = 0; i < data.length; i++) if (this.data[i] != (byte) (i % 256)) return false;
         return true;
     }
 
-    @Override
-    public void run() {
+    public boolean verify() {
         System.out.println("Begin verify payload test object");
-        if (verify()) System.out.println("Payload valid");
+        boolean isValid = isValid();
+        if (isValid) System.out.println("Payload valid");
         else System.out.println("Payload contains errors");
+        return isValid;
+    }
+
+    public int getSize() {
+        return size;
     }
 
     @Override

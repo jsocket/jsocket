@@ -44,6 +44,7 @@ public final class Server implements Runnable {
 
     /**
      * Gets the port this server listens on
+     *
      * @return Integer of this port
      */
     public int getPort() {
@@ -52,6 +53,7 @@ public final class Server implements Runnable {
 
     /**
      * Specifies whether the server is running
+     *
      * @return boolean if the server is running
      */
     public boolean isRunning() {
@@ -105,7 +107,7 @@ public final class Server implements Runnable {
     /**
      * Adds a message handler function
      *
-     * @param name   The message name
+     * @param name          The message name
      * @param messageHandle THe function to be caller
      */
     public void addHandle(String name, MessageHandle messageHandle) {
@@ -114,6 +116,7 @@ public final class Server implements Runnable {
 
     /**
      * Changes the current newConnectionHandle
+     *
      * @param newConnectionHandle The method to be called when new client connects
      */
     public void setNewConnectionHandle(ClientConnectionHandle newConnectionHandle) {
@@ -122,6 +125,7 @@ public final class Server implements Runnable {
 
     /**
      * Changes the current clientDisconnectedHandle
+     *
      * @param clientDisconnectedHandle The method to be called when a client disconnects
      */
     public void setClientDisconnectedHandle(ClientConnectionHandle clientDisconnectedHandle) {
@@ -139,7 +143,7 @@ public final class Server implements Runnable {
     /**
      * Disconnects a client
      *
-     * @param ID The clientID of the client to be disconnected
+     * @param ID               The clientID of the client to be disconnected
      * @param disconnectReason The {@link DisconnectReason DisconnectReason} why it happened
      */
     public synchronized void remove(UUID ID, DisconnectReason disconnectReason) {
@@ -163,14 +167,15 @@ public final class Server implements Runnable {
     /**
      * Sends a message to all connected clients
      *
-     * @param name   The message name
-     * @param sender The original message sender
-     * @param data   The message data
+     * @param name           The message name
+     * @param sender         The original message sender
+     * @param data           The message data
+     * @param returnToSender Should the broadcast message be sent back to the broadcasting client?
      */
-    public void broadcast(String name, SocketPeerID sender, Message data) {
-        System.out.println("Broadcasting message "+data.getDescription());
+    public void broadcast(String name, SocketPeerID sender, Message data, boolean returnToSender) {
+        System.out.println("Broadcasting message " + data.getDescription());
         for (ServerThread client : clients)
-            if (client.getID() != sender.getPeerID())
+            if (!client.getID().equals(sender.getPeerID()) || returnToSender)
                 client.send(new DataCarrier(name, Direction.ToClient, ConversationOrigin.ClientBroadcast, sender, new SocketPeerID(client.getID()), data));
     }
 }
