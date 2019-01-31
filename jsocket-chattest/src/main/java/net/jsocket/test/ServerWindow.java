@@ -3,12 +3,12 @@ package net.jsocket.test;
 import net.jsocket.*;
 import net.jsocket.client.*;
 import net.jsocket.server.*;
-import org.intellij.lang.annotations.JdkConstants;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import java.awt.event.ActionEvent;
-import java.awt.event.AdjustmentEvent;
-import java.awt.event.AdjustmentListener;
+import java.net.IDN;
 import java.util.UUID;
 
 public class ServerWindow extends JFrame {
@@ -31,12 +31,12 @@ public class ServerWindow extends JFrame {
         clientsListModel = new DefaultListModel();
         clientsList.setModel(clientsListModel);
         this.server = server;
-        this.server.setNewConnectionHandle(clientID -> clientsListModel.addElement(clientID));
-        this.server.setClientDisconnectedHandle(clientID -> clientsListModel.removeElement(clientID));
+        this.server.setNewConnectionHandle(this::newConnection);
+        this.server.setClientDisconnectedHandle(this::clientDisconnected);
         console = new Client("localhost", server.getPort(), clientID -> {
-            chatList.setCellRenderer(new ChatItemRenderer(clientID.toString()));
+            chatList.setCellRenderer(new ChatItemRenderer(clientID.toString(), clientID));
             clientsList.setCellRenderer(new UUIDTextRenderer(clientID));
-        }, disconnectReason -> hide());
+        }, (ID, disconnectReason) -> hide());
         setContentPane(root);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         pack();
@@ -58,6 +58,12 @@ public class ServerWindow extends JFrame {
             }
         });
         clientsList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        clientsList.addListSelectionListener(listSelectionEvent -> {
+            if (clientsListModel.get(clientsList.getSelectedIndex()).equals(console.getClientID()))
+                kickButton.disable();
+            else kickButton.enable();
+        });
     }
 
     private void kickButton_click(ActionEvent e) {
@@ -85,5 +91,13 @@ public class ServerWindow extends JFrame {
         }
 
         chatPane.getVerticalScrollBar().setValue(chatPane.getHorizontalScrollBar().getMaximum());
+    }
+
+    public void newConnection(UUID clientID) {
+        clientsListModel.addElement(clientID);
+    }
+
+    public void clientDisconnected(UUID clientID, DisconnectReason disconnectReason) {
+        clientsListModel.removeElement(clientID);
     }
 }

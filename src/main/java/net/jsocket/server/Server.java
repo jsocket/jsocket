@@ -14,8 +14,9 @@ public final class Server implements Runnable {
     private ServerSocket server = null;
     private Thread thread = null;
     private HashMap<String, MessageHandle> messageHandles;
-    private ArrayList<ClientConnectionHandle> newConnectionHandles;
-    private ArrayList<ClientConnectionHandle> clientDisconnectedHandles;
+    private ClientConnectionHandle newConnectionHandle;
+    private ClientDisconnectedHandle clientDisconnectedHandle;
+    private CreateClientProperties createClientProperties;
     private Timer keepAliveTimer = new Timer();
     private volatile boolean shouldRun = false;
     private volatile boolean running = false;
@@ -26,11 +27,10 @@ public final class Server implements Runnable {
      *
      * @param port The port to listen on
      */
-    public Server(int port) {
+    public Server(int port, CreateClientProperties createClientProperties) {
         messageHandles = new HashMap<>();
+        this.createClientProperties = createClientProperties;
         this.port = port;
-        this.newConnectionHandles = new ArrayList<>();
-        this.clientDisconnectedHandles = new ArrayList<>();
         try {
             //TODO Exception handling
             System.out.println("Binding to port " + port + ", please wait  ...");
@@ -114,24 +114,6 @@ public final class Server implements Runnable {
         messageHandles.put(name, messageHandle);
     }
 
-    /**
-     * Changes the current newConnectionHandle
-     *
-     * @param newConnectionHandle The method to be called when new client connects
-     */
-    public void setNewConnectionHandle(ClientConnectionHandle newConnectionHandle) {
-        this.newConnectionHandles.add(newConnectionHandle);
-    }
-
-    /**
-     * Changes the current clientDisconnectedHandle
-     *
-     * @param clientDisconnectedHandle The method to be called when a client disconnects
-     */
-    public void setClientDisconnectedHandle(ClientConnectionHandle clientDisconnectedHandle) {
-        this.clientDisconnectedHandles.add(clientDisconnectedHandle);
-    }
-
     synchronized void handle(DataCarrier data) {
         System.out.println("Handling message name " + data.getName());
         System.out.println(data.getData());
@@ -154,14 +136,22 @@ public final class Server implements Runnable {
             if (pos < clients.size()) clients.remove(pos);
             toTerminate.close(disconnectReason);
         }
-        for (ClientConnectionHandle handle : clientDisconnectedHandles) handle.handle(ID);
+        if (clientDisconnectedHandle != null) clientDisconnectedHandle.handle(ID, disconnectReason);
     }
 
     private void addThread(Socket socket) {
         System.out.println("Client accepted: " + socket);
-        ServerThread thread = new ServerThread(this, socket);
+        ServerThread thread = new ServerThread(this, socket, createClientProperties);
         clients.add(thread);
-        for (ClientConnectionHandle handle : newConnectionHandles) handle.handle(thread.getID());
+        if (newConnectionHandle != null) newConnectionHandle.handle(thread.getID());
+    }
+
+    public void setNewConnectionHandle(ClientConnectionHandle newConnectionHandle) {
+        this.newConnectionHandle = newConnectionHandle;
+    }
+
+    public void setClientDisconnectedHandle(ClientDisconnectedHandle clientDisconnectedHandle) {
+        this.clientDisconnectedHandle = clientDisconnectedHandle;
     }
 
     /**

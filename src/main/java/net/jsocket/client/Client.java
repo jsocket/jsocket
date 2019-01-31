@@ -136,7 +136,7 @@ public class Client implements Constants {
             // we don't care
         }
         client.close();
-        clientClosedHandle.handle(disconnectReason);
+        clientClosedHandle.handle(client.getID(), disconnectReason);
     }
 
     /**

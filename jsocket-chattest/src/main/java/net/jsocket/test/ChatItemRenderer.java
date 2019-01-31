@@ -2,12 +2,15 @@ package net.jsocket.test;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.UUID;
 
 public class ChatItemRenderer extends DefaultListCellRenderer {
     private final String username;
+    private final UUID clientID;
 
-    public ChatItemRenderer(String username) {
+    public ChatItemRenderer(String username, UUID clientID) {
         this.username = username;
+        this.clientID = clientID;
     }
 
     @Override
@@ -35,7 +38,7 @@ public class ChatItemRenderer extends DefaultListCellRenderer {
                     interval = (chatItem.getSent().getTime() - previous.getSent().getTime()) / 1000;
                     if (!previous.getUsername().equals(chatItem.getUsername())) {
                         sender.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.BLACK));
-                        sender.setText(chatItem.getUsername() + ":");
+                        sender.setText((chatItem.getUsername().equals(username) ? "You" : chatItem.getUsername()) + ":");
                         time.setText(chatItem.getSent() + ":");
                     } else if (interval > 5) {
                         time.setText(chatItem.getSent() + ":");
@@ -48,7 +51,7 @@ public class ChatItemRenderer extends DefaultListCellRenderer {
                 }
             } else {
                 sender.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.BLACK));
-                sender.setText(chatItem.getUsername() + ":");
+                sender.setText((chatItem.getUsername().equals(username) ? "You" : chatItem.getUsername()) + ":");
                 time.setText(chatItem.getSent() + ":");
             }
 

@@ -1,9 +1,12 @@
 package net.jsocket.test;
 
+import net.jsocket.ClientProperties;
 import net.jsocket.ConversationOrigin;
 import net.jsocket.DataCarrier;
 import net.jsocket.server.Server;
 import org.apache.commons.cli.*;
+
+import java.util.UUID;
 
 public class Main {
     private static Server server;
@@ -28,7 +31,7 @@ public class Main {
                 }
                 break;
             case "server":
-                server = new Server(Integer.parseInt(cmd.getOptionValue("port")));
+                server = new Server(Integer.parseInt(cmd.getOptionValue("port")), Main::server_createClientProperties);
                 server.addHandle("chatMessage", Main::server_chatMessageHandle);
                 server.addHandle("payloadTest", Main::server_payloadTestHandle);
                 if (!cmd.hasOption("nogui")) {
@@ -39,6 +42,11 @@ public class Main {
                 }
                 break;
         }
+    }
+
+    private static ClientProperties server_createClientProperties(UUID uuid) {
+        ChatClientProperties properties = new ChatClientProperties(uuid);
+        return properties;
     }
 
     private static void server_chatMessageHandle(DataCarrier dataCarrier) {

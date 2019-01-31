@@ -8,6 +8,7 @@
         <outputRelativeToContentRoot value="true" />
         <module name="jsocket" />
         <module name="jsocket-chattest" />
+        <module name="jsocket-test" />
       </profile>
     </annotationProcessing>
   </component>

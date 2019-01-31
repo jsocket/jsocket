@@ -24,6 +24,8 @@ public class ServerThread implements Runnable, Constants {
     private DataOutputStream streamOut = null;
     private volatile boolean running = true;
     private SecretKey symmetricKey;
+    private ClientProperties clientProperties;
+    private CreateClientProperties createClientProperties;
 
     /**
      * The default constructor
@@ -31,10 +33,11 @@ public class ServerThread implements Runnable, Constants {
      * @param _server The managing server
      * @param _socket The socket connected to the client
      */
-    public ServerThread(Server _server, Socket _socket) {
+    public ServerThread(Server _server, Socket _socket, CreateClientProperties createClientProperties) {
         server = _server;
         socket = _socket;
         ID = UUID.randomUUID();
+        this.createClientProperties = createClientProperties;
         Thread thread = new Thread(this);
         try {
             streamIn = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
@@ -111,6 +114,8 @@ public class ServerThread implements Runnable, Constants {
             close(DisconnectReason.ServerError);
         }
 
+        clientProperties = createClientProperties.create(ID);
+
         do {
             try {
                 ObjectInputStream input = new ObjectInputStream(streamIn);
@@ -143,5 +148,13 @@ public class ServerThread implements Runnable, Constants {
             //TODO Exception handling
             e.printStackTrace();
         }
+    }
+
+    public ClientProperties getClientProperties() {
+        return clientProperties;
+    }
+
+    public void setClientProperties(ClientProperties clientProperties) {
+        this.clientProperties = clientProperties;
     }
 }

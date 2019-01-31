@@ -8,7 +8,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
-import java.text.ParseException;
+import java.net.IDN;
 
 public class ClientWindow extends JFrame {
 
@@ -20,6 +20,7 @@ public class ClientWindow extends JFrame {
     private JTextArea chatArea;
     private JButton payloadTestButton;
     private JSpinner testPayloadByteSizeSpinner;
+    private JButton changeNicknameButton;
     Client client;
 
     public ClientWindow(String host, int port) {
@@ -29,11 +30,11 @@ public class ClientWindow extends JFrame {
         pack();
         chatListModel = new DefaultListModel();
         chatList.setModel(chatListModel);
-        client = new Client(host, port, peerID -> chatList.setCellRenderer(new ChatItemRenderer(peerID.toString())), disconnectReason -> dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING)));
+        client = new Client(host, port, clientID -> chatList.setCellRenderer(new ChatItemRenderer(clientID.toString(), clientID)), (ID, disconnectReason) -> dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING)));
         client.addHandle("chatMessage", this::client_chatMessageHandle);
         sendButton.addActionListener(this::sendButton_click);
         payloadTestButton.addActionListener(this::payloadTestButton_click);
-        setMinimumSize(new Dimension(300, 400));
+        setMinimumSize(new Dimension(400, 400));
         InputMap input = chatArea.getInputMap();
         KeyStroke enter = KeyStroke.getKeyStroke("ENTER");
         KeyStroke shiftEnter = KeyStroke.getKeyStroke("shift ENTER");
@@ -48,6 +49,18 @@ public class ClientWindow extends JFrame {
             }
         });
         testPayloadByteSizeSpinner.setValue(50000000);
+        changeNicknameButton.addActionListener(this::changeNicknameButton_click);
+    }
+
+    private void changeNicknameButton_click(ActionEvent actionEvent) {
+        ChangeNicknameDialog dialog = new ChangeNicknameDialog(client.getClientID().toString());
+        dialog.pack();
+        dialog.setVisible(true);
+        if (dialog.isConfirmed()) nicknameChanged(dialog.getNewName());
+    }
+
+    private void nicknameChanged(String newName) {
+
     }
 
     private void payloadTestButton_click(ActionEvent actionEvent) {

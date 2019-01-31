@@ -1,5 +1,7 @@
 package net.jsocket;
 
+import java.util.UUID;
+
 /**
  * Handles disconnected clients
  */
@@ -10,5 +12,5 @@ public interface ClientDisconnectedHandle {
      * @param disconnectReason Why did the client disconnect
      * @see DisconnectReason
      */
-    void handle(DisconnectReason disconnectReason);
+    void handle(UUID clientID, DisconnectReason disconnectReason);
 }
