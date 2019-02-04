@@ -43,9 +43,10 @@ public class Client implements Constants {
             start(clientInitialised);
         } catch (UnknownHostException e) {
             System.out.println("Host unknown: " + e.getMessage());
+            clientClosedHandle.handle(null, DisconnectReason.NetworkError);
         } catch (IOException e) {
             System.out.println("Unexpected exception: " + e.getMessage());
-            System.exit(1);
+            clientClosedHandle.handle(null, DisconnectReason.ClientError);
         }
     }
 
