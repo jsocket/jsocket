@@ -2,6 +2,7 @@ package net.jsocket.test;
 
 import net.jsocket.*;
 import net.jsocket.server.Server;
+import net.jsocket.server.ServerThread;
 import org.apache.commons.cli.*;
 
 import java.util.UUID;
@@ -48,13 +49,13 @@ public class Main {
         return new ChatClientProperties(uuid);
     }
 
-    private static void server_chatMessageHandle(DataCarrier<TextMessage> data) {
+    private static void server_chatMessageHandle(ServerThread<ChatClientProperties> sender, DataCarrier<TextMessage> data) {
         if (data.getConversationOrigin() == ConversationOrigin.ClientBroadcast) {
             server.broadcast("chatMessage", data.getSenderID(), data.getData(), true);
         }
     }
 
-    private static void server_payloadTestHandle(DataCarrier<PayloadTest> data) {
+    private static void server_payloadTestHandle(ServerThread<ChatClientProperties> sender, DataCarrier<PayloadTest> data) {
         PayloadTest payloadTest = data.getData();
         server.broadcast("payloadSentMessage", data.getSenderID(), new PayloadSentChatItem(data.getSenderID().getPeerID(), data.getSenderID().getPeerID().toString(), payloadTest.getSize(), payloadTest.verify()), true);
     }

@@ -120,7 +120,7 @@ public class ServerThread<ClientProp extends ClientProperties> implements Runnab
         do {
             try {
                 ObjectInputStream input = new ObjectInputStream(streamIn);
-                server.handle(((EncryptedCarrier) input.readObject()).getDataCarrier(symmetricKey));
+                server.handle(this, ((EncryptedCarrier) input.readObject()).getDataCarrier(symmetricKey));
             } catch (IOException e) {
                 //TODO Exception handling
                 System.out.println(ID + " ERROR reading: " + e.getMessage());

@@ -16,7 +16,7 @@ public class Client implements Constants {
     private Socket socket = null;
     private DataOutputStream streamOut = null;
     private ClientThread client = null;
-    private HashMap<String, MessageHandle> messageHandles;
+    private HashMap<String, ClientMessageHandle> messageHandles;
     private ClientDisconnectedHandle clientClosedHandle;
     private SecretKey symmetricKey;
 
@@ -32,7 +32,7 @@ public class Client implements Constants {
         System.out.println("Establishing connection. Please wait ...");
         messageHandles = new HashMap<>();
         this.clientClosedHandle = clientClosedHandle;
-        messageHandles.put("disconnect", (MessageHandle<DisconnectMessage>) data -> {
+        messageHandles.put("disconnect", (ClientMessageHandle<DisconnectMessage>) data -> {
             try (DisconnectMessage message = data.getData()) {
                 stop(message.getDisconnectReason());
             }
@@ -98,10 +98,10 @@ public class Client implements Constants {
      * Add a handle function to this client
      *
      * @param eventName     The message name
-     * @param messageHandle The handling function
+     * @param clientMessageHandle The handling function
      */
-    public <TData extends Message> void addHandle(String eventName, MessageHandle<TData> messageHandle) {
-        messageHandles.put(eventName, messageHandle);
+    public <TData extends Message> void addHandle(String eventName, ClientMessageHandle<TData> clientMessageHandle) {
+        messageHandles.put(eventName, clientMessageHandle);
     }
 
     <TData extends Message> void handle(DataCarrier<TData> data) {

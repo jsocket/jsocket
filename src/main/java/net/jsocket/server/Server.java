@@ -1,7 +1,6 @@
 package net.jsocket.server;
 
 import net.jsocket.*;
-import net.jsocket.client.Client;
 
 import java.net.*;
 import java.io.*;
@@ -14,7 +13,7 @@ public final class Server<ClientProp extends ClientProperties> implements Runnab
     private ArrayList<ServerThread<ClientProp>> clients = new ArrayList<>();
     private ServerSocket server = null;
     private Thread thread = null;
-    private HashMap<String, MessageHandle> messageHandles;
+    private HashMap<String, ServerMessageHandle<ClientProp, ? extends Message>> messageHandles;
     private ClientConnectionHandle newConnectionHandle;
     private ClientDisconnectedHandle clientDisconnectedHandle;
     private CreateClientProperties<ClientProp> createClientProperties;
@@ -108,19 +107,19 @@ public final class Server<ClientProp extends ClientProperties> implements Runnab
     /**
      * Adds a message handler function
      *
-     * @param name          The message name
-     * @param messageHandle THe function to be caller
+     * @param name                The message name
+     * @param clientMessageHandle THe function to be caller
      */
-    public <TData extends Message> void addHandle(String name, MessageHandle<TData> messageHandle) {
-        messageHandles.put(name, messageHandle);
+    public <TData extends Message> void addHandle(String name, ServerMessageHandle<ClientProp, TData> clientMessageHandle) {
+        messageHandles.put(name, clientMessageHandle);
     }
 
-    synchronized <TData extends Message> void handle(DataCarrier<TData> data) {
+    synchronized <TData extends Message> void handle(ServerThread<ClientProp> sender, DataCarrier<TData> data) {
         System.out.println("Handling message name " + data.getName());
         System.out.println(data.getData());
-        MessageHandle handle = messageHandles.get(data.getName());
+        ServerMessageHandle<ClientProp, ? extends Message> handle = messageHandles.get(data.getName());
         if (messageHandles.containsKey(data.getName())) {
-            handle.handle(data);
+            ((ServerMessageHandle<ClientProp, TData>) messageHandles.get(data.getName())).handle(sender, data);
         }
     }
 

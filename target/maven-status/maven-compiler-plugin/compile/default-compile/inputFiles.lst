@@ -19,8 +19,9 @@
 /Users/krejcar25/IdeaProjects/jsocket/src/main/java/net/jsocket/server/package-info.java
 /Users/krejcar25/IdeaProjects/jsocket/src/main/java/net/jsocket/client/Client.java
 /Users/krejcar25/IdeaProjects/jsocket/src/main/java/net/jsocket/DisconnectMessage.java
+/Users/krejcar25/IdeaProjects/jsocket/src/main/java/net/jsocket/ClientMessageHandle.java
 /Users/krejcar25/IdeaProjects/jsocket/src/main/java/net/jsocket/server/Server.java
 /Users/krejcar25/IdeaProjects/jsocket/src/main/java/net/jsocket/TextMessage.java
-/Users/krejcar25/IdeaProjects/jsocket/src/main/java/net/jsocket/MessageHandle.java
+/Users/krejcar25/IdeaProjects/jsocket/src/main/java/net/jsocket/ServerMessageHandle.java
 /Users/krejcar25/IdeaProjects/jsocket/src/main/java/net/jsocket/ClientConnectionHandle.java
 /Users/krejcar25/IdeaProjects/jsocket/src/main/java/net/jsocket/DataCarrier.java
