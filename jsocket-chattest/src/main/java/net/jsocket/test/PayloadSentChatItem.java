@@ -5,16 +5,18 @@ import net.jsocket.Message;
 import java.util.Date;
 import java.util.UUID;
 
-public class PayloadSentChatItem implements Message {
+public class PayloadSentChatItem implements Message, ChatItem {
     private final UUID senderID;
+    private final String username;
     private final int size;
-    private final Date timestamp;
+    private final Date sent;
     private final boolean successful;
 
-    public PayloadSentChatItem(UUID senderID, int size, boolean successful) {
+    public PayloadSentChatItem(UUID senderID, String username, int size, boolean successful) {
         this.senderID = senderID;
+        this.username = username;
         this.size = size;
-        this.timestamp = new Date();
+        this.sent = new Date();
         this.successful = successful;
     }
 
@@ -22,12 +24,18 @@ public class PayloadSentChatItem implements Message {
         return senderID;
     }
 
+    @Override
+    public String getUsername() {
+        return username;
+    }
+
     public int getSize() {
         return size;
     }
 
-    public Date getTimestamp() {
-        return timestamp;
+    @Override
+    public Date getSent() {
+        return sent;
     }
 
     public boolean isSuccessful() {

@@ -2,7 +2,6 @@ package net.jsocket.test;
 
 import net.jsocket.ClientProperties;
 
-import java.util.Date;
 import java.util.UUID;
 
 public class ChatClientProperties extends ClientProperties {

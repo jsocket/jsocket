@@ -5,30 +5,27 @@ import net.jsocket.client.*;
 import net.jsocket.server.*;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import java.awt.event.ActionEvent;
-import java.net.IDN;
 import java.util.UUID;
 
 public class ServerWindow extends JFrame {
     private JPanel root;
     private JButton sendButton;
-    private JList chatList;
-    private JList clientsList;
+    private JList<ChatItem> chatList;
+    private JList<UUID> clientsList;
     private JButton kickButton;
     private JScrollPane chatPane;
     private JTextArea chatArea;
-    private DefaultListModel chatListModel;
-    private DefaultListModel clientsListModel;
+    private DefaultListModel<ChatItem> chatListModel;
+    private DefaultListModel<UUID> clientsListModel;
     private Server server;
     private Client console;
 
     public ServerWindow(Server server) {
         super("JSocket Demo App Server");
-        chatListModel = new DefaultListModel();
+        chatListModel = new DefaultListModel<>();
         chatList.setModel(chatListModel);
-        clientsListModel = new DefaultListModel();
+        clientsListModel = new DefaultListModel<>();
         clientsList.setModel(clientsListModel);
         this.server = server;
         this.server.setNewConnectionHandle(this::newConnection);
@@ -42,8 +39,8 @@ public class ServerWindow extends JFrame {
         pack();
         kickButton.addActionListener(this::kickButton_click);
         sendButton.addActionListener(this::sendButton_click);
-        // server.addHandle("chatMessage", this::server_chatMessageHandle);
         console.addHandle("chatMessage", this::console_chatMessageHandle);
+        console.addHandle("payloadSentMessage", this::console_payloadSentChatItemHandle);
         InputMap input = chatArea.getInputMap();
         KeyStroke enter = KeyStroke.getKeyStroke("ENTER");
         KeyStroke shiftEnter = KeyStroke.getKeyStroke("shift ENTER");
@@ -76,21 +73,21 @@ public class ServerWindow extends JFrame {
 
     private void send() {
         if (chatArea.getText() != "") {
-            DataCarrier carrier = new DataCarrier("chatMessage", Direction.ToServer, ConversationOrigin.ClientBroadcast, new SocketPeerID(console.getClientID()), SocketPeerID.Broadcast, new TextMessage(chatArea.getText()));
+            DataCarrier carrier = new DataCarrier<>("chatMessage", Direction.ToServer, ConversationOrigin.ClientBroadcast, new SocketPeerID(console.getClientID()), SocketPeerID.Broadcast, new TextMessage(chatArea.getText()));
             console.send(carrier);
         }
         chatArea.setText("");
     }
 
-    private void console_chatMessageHandle(DataCarrier dataCarrier) {
-        if (dataCarrier.getData() instanceof TextMessage) {
-            TextMessage message = (TextMessage) dataCarrier.getData();
-            chatListModel.addElement(new ChatItem(dataCarrier.getSenderID().getPeerID().toString(), message.getMessage(), message.getTimestamp()));
-        } else if (dataCarrier.getData() instanceof PayloadSentChatItem) {
-            chatListModel.addElement(dataCarrier.getData());
-        }
+    private void console_chatMessageHandle(DataCarrier<TextMessage> dataCarrier) {
+        TextMessage message = dataCarrier.getData();
+        chatListModel.addElement(new TextChatItem(dataCarrier.getSenderID().getPeerID().toString(), message.getMessage(), message.getTimestamp()));
 
         chatPane.getVerticalScrollBar().setValue(chatPane.getHorizontalScrollBar().getMaximum());
+    }
+
+    private void console_payloadSentChatItemHandle(DataCarrier<PayloadSentChatItem> dataCarrier) {
+        chatListModel.addElement(dataCarrier.getData());
     }
 
     public void newConnection(UUID clientID) {

@@ -1,15 +1,13 @@
 package net.jsocket.test;
 
-import net.jsocket.ClientProperties;
-import net.jsocket.ConversationOrigin;
-import net.jsocket.DataCarrier;
+import net.jsocket.*;
 import net.jsocket.server.Server;
 import org.apache.commons.cli.*;
 
 import java.util.UUID;
 
 public class Main {
-    private static Server server;
+    private static Server<ChatClientProperties> server;
 
     public static void main(String[] args) {
         Options options = new Options();
@@ -23,40 +21,41 @@ public class Main {
         } catch (ParseException e) {
             new HelpFormatter().printHelp("java -jar jsocketchat_test.jar", options);
         }
-        switch (cmd.getOptionValue("mode")) {
-            case "client":
-                if (cmd.hasOption("address")) {
-                    ClientWindow window = new ClientWindow(cmd.getOptionValue("address"), Integer.parseInt(cmd.getOptionValue("port")));
-                    window.show();
-                }
-                break;
-            case "server":
-                server = new Server(Integer.parseInt(cmd.getOptionValue("port")), Main::server_createClientProperties);
-                server.addHandle("chatMessage", Main::server_chatMessageHandle);
-                server.addHandle("payloadTest", Main::server_payloadTestHandle);
-                if (!cmd.hasOption("nogui")) {
-                    ServerWindow serverWindow = new ServerWindow(server);
-                    serverWindow.show();
-                } else {
-                    while (server.isRunning()) Thread.onSpinWait();
-                }
-                break;
+        if (cmd != null) {
+            switch (cmd.getOptionValue("mode")) {
+                case "client":
+                    if (cmd.hasOption("address")) {
+                        ClientWindow window = new ClientWindow(cmd.getOptionValue("address"), Integer.parseInt(cmd.getOptionValue("port")));
+                        window.show();
+                    }
+                    break;
+                case "server":
+                    server = new Server<>(Integer.parseInt(cmd.getOptionValue("port")), Main::server_createClientProperties);
+                    server.addHandle("chatMessage", Main::server_chatMessageHandle);
+                    server.addHandle("payloadTest", Main::server_payloadTestHandle);
+                    if (!cmd.hasOption("nogui")) {
+                        ServerWindow serverWindow = new ServerWindow(server);
+                        serverWindow.setVisible(true);
+                    } else {
+                        while (server.isRunning()) Thread.onSpinWait();
+                    }
+                    break;
+            }
         }
     }
 
-    private static ClientProperties server_createClientProperties(UUID uuid) {
-        ChatClientProperties properties = new ChatClientProperties(uuid);
-        return properties;
+    private static ChatClientProperties server_createClientProperties(UUID uuid) {
+        return new ChatClientProperties(uuid);
     }
 
-    private static void server_chatMessageHandle(DataCarrier dataCarrier) {
-        if (dataCarrier.getConversationOrigin() == ConversationOrigin.ClientBroadcast) {
-            server.broadcast("chatMessage", dataCarrier.getSenderID(), dataCarrier.getData(), true);
+    private static void server_chatMessageHandle(DataCarrier<TextMessage> data) {
+        if (data.getConversationOrigin() == ConversationOrigin.ClientBroadcast) {
+            server.broadcast("chatMessage", data.getSenderID(), data.getData(), true);
         }
     }
 
-    private static void server_payloadTestHandle(DataCarrier dataCarrier) {
-        PayloadTest payloadTest = (PayloadTest) dataCarrier.getData();
-        server.broadcast("chatMessage", dataCarrier.getSenderID(), new PayloadSentChatItem(dataCarrier.getSenderID().getPeerID(), payloadTest.getSize(), payloadTest.verify()), true);
+    private static void server_payloadTestHandle(DataCarrier<PayloadTest> data) {
+        PayloadTest payloadTest = data.getData();
+        server.broadcast("payloadSentMessage", data.getSenderID(), new PayloadSentChatItem(data.getSenderID().getPeerID(), data.getSenderID().getPeerID().toString(), payloadTest.getSize(), payloadTest.verify()), true);
     }
 }
