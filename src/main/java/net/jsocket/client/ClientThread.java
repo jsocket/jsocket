@@ -88,7 +88,7 @@ public class ClientThread implements Runnable {
                     client.setSymmetricKey(symmetricKey);
                     PublicKeyMessage pkm = (PublicKeyMessage) data.getData();
                     ID = pkm.getNewClientID();
-                    client.sendSymmetricKey(new DataCarrier("symmetricKey", Direction.ToServer, ConversationReason.SymmetricKey, ID, new KeyExchangeMessage(symmetricKey, pkm.getPublicKey())));
+                    client.sendSymmetricKey(new DataCarrier<>("symmetricKey", Direction.ToServer, ConversationReason.SymmetricKey, ID, new KeyExchangeMessage(symmetricKey, pkm.getPublicKey())));
                     hasKey = true;
                 }
             } catch (IOException e) {

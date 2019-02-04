@@ -4,8 +4,8 @@ import java.util.Date;
 import java.util.UUID;
 
 public class ClientProperties implements Message {
-    private final Date connectionStarted;
-    private final UUID clientID;
+    protected final Date connectionStarted;
+    protected final UUID clientID;
 
     public ClientProperties(UUID clientID) {
         this.connectionStarted = new Date();

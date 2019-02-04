@@ -5,14 +5,14 @@ import java.io.Serializable;
 /**
  * Encapsulates the data, that is being sent between the server and its clients
  */
-public class DataCarrier implements Serializable {
+public class DataCarrier<TData extends Message> implements Serializable {
     private final String name;
     private final Direction direction;
     private final ConversationOrigin conversationOrigin;
     private final ConversationReason conversationReason;
     private final SocketPeerID senderID;
     private final SocketPeerID recipientID;
-    private final Message data;
+    private final TData data;
 
     /**
      * User-invoked communication DataCarrier constructor
@@ -24,7 +24,7 @@ public class DataCarrier implements Serializable {
      * @param recipientID        Specifies the clientID of the recipient of this message.<br> Can also be {@link net.jsocket.SocketPeerID#Server SocketPeerID.Server} or {@link net.jsocket.SocketPeerID#Broadcast SocketPeerID.Broadcast} in case of a broadcast message on its way from a client to the server.
      * @param data               The actual data of this message
      */
-    public DataCarrier(String name, Direction direction, ConversationOrigin conversationOrigin, SocketPeerID senderID, SocketPeerID recipientID, Message data) {
+    public DataCarrier(String name, Direction direction, ConversationOrigin conversationOrigin, SocketPeerID senderID, SocketPeerID recipientID, TData data) {
         this.name = name;
         this.direction = direction;
         this.conversationOrigin = conversationOrigin;
@@ -43,7 +43,7 @@ public class DataCarrier implements Serializable {
      * @param peerID             clientID of either the sending or receiving client, depending on direction
      * @param data               The actual data of this message
      */
-    public DataCarrier(String name, Direction direction, ConversationReason conversationReason, SocketPeerID peerID, Message data) {
+    public DataCarrier(String name, Direction direction, ConversationReason conversationReason, SocketPeerID peerID, TData data) {
         this.name = name;
         this.direction = direction;
         this.conversationOrigin = (direction == Direction.ToClient) ? ConversationOrigin.ServerToClient : ConversationOrigin.ClientToServer;
@@ -135,7 +135,11 @@ public class DataCarrier implements Serializable {
      *
      * @return Object this message is carrying
      */
-    public Message getData() {
+    public TData getData() {
         return data;
+    }
+
+    public Class<? extends Message> getDataType() {
+        return data.getClass();
     }
 }

@@ -4,6 +4,7 @@ import net.jsocket.*;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.SecretKey;
+import javax.management.openmbean.TabularData;
 import java.io.*;
 import java.net.*;
 import java.security.InvalidKeyException;
@@ -16,7 +17,7 @@ import java.util.UUID;
  * A thread that listens to one client
  */
 @SuppressWarnings("WeakerAccess")
-public class ServerThread implements Runnable, Constants {
+public class ServerThread<ClientProp extends ClientProperties> implements Runnable, Constants {
     private Server server;
     private Socket socket;
     private UUID ID;
@@ -24,8 +25,8 @@ public class ServerThread implements Runnable, Constants {
     private DataOutputStream streamOut = null;
     private volatile boolean running = true;
     private SecretKey symmetricKey;
-    private ClientProperties clientProperties;
-    private CreateClientProperties createClientProperties;
+    private ClientProp clientProperties;
+    private CreateClientProperties<ClientProp> createClientProperties;
 
     /**
      * The default constructor
@@ -55,7 +56,7 @@ public class ServerThread implements Runnable, Constants {
      * @param data The message to be sent
      * @throws SecurityException Thrown when a message wih an illegal name is sent
      */
-    public void send(DataCarrier data) throws SecurityException {
+    public <TData extends Message> void send(DataCarrier<TData> data) throws SecurityException {
         if (isHandleBlacklisted(data.getName()) && !(data.getName().equals("publicKey") && data.getConversationReason() == ConversationReason.ServerPublicKey))
             throw new SecurityException("This message name is not allowed: " + data.getName());
         try {
@@ -90,7 +91,7 @@ public class ServerThread implements Runnable, Constants {
             kpg.initialize(2048);
             KeyPair keyPair = kpg.generateKeyPair();
             ObjectOutputStream output = new ObjectOutputStream(streamOut);
-            output.writeObject(new DataCarrier("publicKey", Direction.ToClient, ConversationReason.ServerPublicKey, SocketPeerID.NewClient, new PublicKeyMessage(keyPair.getPublic(), new SocketPeerID(ID))));
+            output.writeObject(new DataCarrier<>("publicKey", Direction.ToClient, ConversationReason.ServerPublicKey, SocketPeerID.NewClient, new PublicKeyMessage(keyPair.getPublic(), new SocketPeerID(ID))));
             output.flush();
             boolean hasKey = false;
             do {
@@ -119,8 +120,7 @@ public class ServerThread implements Runnable, Constants {
         do {
             try {
                 ObjectInputStream input = new ObjectInputStream(streamIn);
-                DataCarrier data = ((EncryptedCarrier) input.readObject()).getDataCarrier(symmetricKey);
-                server.handle(data);
+                server.handle(((EncryptedCarrier) input.readObject()).getDataCarrier(symmetricKey));
             } catch (IOException e) {
                 //TODO Exception handling
                 System.out.println(ID + " ERROR reading: " + e.getMessage());
@@ -139,7 +139,7 @@ public class ServerThread implements Runnable, Constants {
      */
     public void close(DisconnectReason disconnectReason) {
         running = false;
-        send(new DataCarrier("disconnect", Direction.ToClient, ConversationOrigin.ServerToClient, SocketPeerID.Server, new SocketPeerID(ID), new DisconnectMessage(disconnectReason, "")));
+        send(new DataCarrier<>("disconnect", Direction.ToClient, ConversationOrigin.ServerToClient, SocketPeerID.Server, new SocketPeerID(ID), new DisconnectMessage(disconnectReason, "")));
         try {
             if (socket != null) socket.close();
             if (streamIn != null) streamIn.close();
@@ -150,11 +150,11 @@ public class ServerThread implements Runnable, Constants {
         }
     }
 
-    public ClientProperties getClientProperties() {
+    public ClientProp getClientProperties() {
         return clientProperties;
     }
 
-    public void setClientProperties(ClientProperties clientProperties) {
+    public void setClientProperties(ClientProp clientProperties) {
         this.clientProperties = clientProperties;
     }
 }

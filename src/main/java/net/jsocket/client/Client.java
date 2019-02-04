@@ -32,7 +32,11 @@ public class Client implements Constants {
         System.out.println("Establishing connection. Please wait ...");
         messageHandles = new HashMap<>();
         this.clientClosedHandle = clientClosedHandle;
-        messageHandles.put("disconnect", this::disconnectHandle);
+        messageHandles.put("disconnect", (MessageHandle<DisconnectMessage>) data -> {
+            try (DisconnectMessage message = data.getData()) {
+                stop(message.getDisconnectReason());
+            }
+        });
         try {
             socket = new Socket(serverName, serverPort);
             System.out.println("Connected: " + socket);
@@ -42,12 +46,6 @@ public class Client implements Constants {
         } catch (IOException e) {
             System.out.println("Unexpected exception: " + e.getMessage());
             System.exit(1);
-        }
-    }
-
-    private void disconnectHandle(DataCarrier dataCarrier) {
-        try (DisconnectMessage message = (DisconnectMessage) dataCarrier.getData()) {
-            stop(message.getDisconnectReason());
         }
     }
 
@@ -92,8 +90,8 @@ public class Client implements Constants {
      * @param name The name of the message
      * @param data The data to be sent
      */
-    public void broadcast(String name, Message data) {
-        send(new DataCarrier(name, Direction.ToServer, ConversationOrigin.ClientBroadcast, client.getSocketPeerID(), SocketPeerID.Broadcast, data));
+    public <TData extends Message> void broadcast(String name, TData data) {
+        send(new DataCarrier<>(name, Direction.ToServer, ConversationOrigin.ClientBroadcast, client.getSocketPeerID(), SocketPeerID.Broadcast, data));
     }
 
     /**
@@ -102,11 +100,11 @@ public class Client implements Constants {
      * @param eventName     The message name
      * @param messageHandle The handling function
      */
-    public void addHandle(String eventName, MessageHandle messageHandle) {
+    public <TData extends Message> void addHandle(String eventName, MessageHandle<TData> messageHandle) {
         messageHandles.put(eventName, messageHandle);
     }
 
-    void handle(DataCarrier data) {
+    <TData extends Message> void handle(DataCarrier<TData> data) {
         if (messageHandles.containsKey(data.getName())) {
             System.out.println("Handle found for name " + data.getName());
             messageHandles.get(data.getName()).handle(data);

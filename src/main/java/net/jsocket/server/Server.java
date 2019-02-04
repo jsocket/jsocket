@@ -1,6 +1,7 @@
 package net.jsocket.server;
 
 import net.jsocket.*;
+import net.jsocket.client.Client;
 
 import java.net.*;
 import java.io.*;
@@ -9,14 +10,14 @@ import java.util.*;
 /**
  * The socket server object
  */
-public final class Server implements Runnable {
-    private ArrayList<ServerThread> clients = new ArrayList<>();
+public final class Server<ClientProp extends ClientProperties> implements Runnable {
+    private ArrayList<ServerThread<ClientProp>> clients = new ArrayList<>();
     private ServerSocket server = null;
     private Thread thread = null;
     private HashMap<String, MessageHandle> messageHandles;
     private ClientConnectionHandle newConnectionHandle;
     private ClientDisconnectedHandle clientDisconnectedHandle;
-    private CreateClientProperties createClientProperties;
+    private CreateClientProperties<ClientProp> createClientProperties;
     private Timer keepAliveTimer = new Timer();
     private volatile boolean shouldRun = false;
     private volatile boolean running = false;
@@ -27,7 +28,7 @@ public final class Server implements Runnable {
      *
      * @param port The port to listen on
      */
-    public Server(int port, CreateClientProperties createClientProperties) {
+    public Server(int port, CreateClientProperties<ClientProp> createClientProperties) {
         messageHandles = new HashMap<>();
         this.createClientProperties = createClientProperties;
         this.port = port;
@@ -110,15 +111,16 @@ public final class Server implements Runnable {
      * @param name          The message name
      * @param messageHandle THe function to be caller
      */
-    public void addHandle(String name, MessageHandle messageHandle) {
+    public <TData extends Message> void addHandle(String name, MessageHandle<TData> messageHandle) {
         messageHandles.put(name, messageHandle);
     }
 
-    synchronized void handle(DataCarrier data) {
+    synchronized <TData extends Message> void handle(DataCarrier<TData> data) {
         System.out.println("Handling message name " + data.getName());
         System.out.println(data.getData());
+        MessageHandle handle = messageHandles.get(data.getName());
         if (messageHandles.containsKey(data.getName())) {
-            messageHandles.get(data.getName()).handle(data);
+            handle.handle(data);
         }
     }
 
@@ -141,7 +143,7 @@ public final class Server implements Runnable {
 
     private void addThread(Socket socket) {
         System.out.println("Client accepted: " + socket);
-        ServerThread thread = new ServerThread(this, socket, createClientProperties);
+        ServerThread<ClientProp> thread = new ServerThread<>(this, socket, createClientProperties);
         clients.add(thread);
         if (newConnectionHandle != null) newConnectionHandle.handle(thread.getID());
     }
@@ -166,6 +168,13 @@ public final class Server implements Runnable {
         System.out.println("Broadcasting message " + data.getDescription());
         for (ServerThread client : clients)
             if (!client.getID().equals(sender.getPeerID()) || returnToSender)
-                client.send(new DataCarrier(name, Direction.ToClient, ConversationOrigin.ClientBroadcast, sender, new SocketPeerID(client.getID()), data));
+                client.send(new DataCarrier<>(name, Direction.ToClient, ConversationOrigin.ClientBroadcast, sender, new SocketPeerID(client.getID()), data));
+    }
+
+    public ClientProp getClientProperties(UUID clientId) {
+        for (ServerThread<ClientProp> client : clients) {
+            if (client.getID().equals(clientId)) return client.getClientProperties();
+        }
+        return null;
     }
 }
