@@ -1,5 +1,7 @@
 package net.jsocket;
 
+import org.jetbrains.annotations.Contract;
+
 /**
  * Indicates the direction of a message
  */
@@ -23,5 +25,24 @@ public enum ConversationOrigin {
     /**
      * Broadcast message initiated by the server
      */
-    ServerBroadcast
+    ServerBroadcast;
+
+    @Contract(pure = true)
+    public ConversationOrigin getResponseOrigin() {
+        switch (this) {
+            case ClientToClient:
+                return ClientToClient;
+            case ClientToServer:
+                return ServerToClient;
+            case ServerToClient:
+                return ClientToServer;
+            case ClientBroadcast:
+                return ClientToClient;
+            case ServerBroadcast:
+                return ClientToServer;
+            default:
+                assert false;
+                return valueOf("false");
+        }
+    }
 }

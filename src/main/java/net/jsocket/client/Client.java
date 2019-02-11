@@ -1,6 +1,7 @@
 package net.jsocket.client;
 
 import net.jsocket.*;
+import org.jetbrains.annotations.Nullable;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.SecretKey;
@@ -17,6 +18,7 @@ public class Client implements Constants {
     private DataOutputStream streamOut = null;
     private ClientThread client = null;
     private HashMap<String, ClientMessageHandle> messageHandles;
+    private HashMap<UUID, ClientResponseHandle> responseHandles;
     private ClientDisconnectedHandle clientClosedHandle;
     private SecretKey symmetricKey;
 
@@ -57,12 +59,13 @@ public class Client implements Constants {
      * @throws SecurityException Thrown when a messageName that is used by the library or is blacklisted for any other reason is passed to be sent
      * @see DataCarrier
      */
-    public void send(DataCarrier data) throws SecurityException {
+    public <T extends Message> void send(DataCarrier<T> data, @Nullable ClientResponseHandle<T> responseHandle) throws SecurityException {
         if (isHandleBlacklisted(data.getName()))
             throw new SecurityException("This message name is not allowed: " + data.getName());
         try {
             ObjectOutputStream output = new ObjectOutputStream(streamOut);
             output.writeObject(new EncryptedCarrier(data, symmetricKey));
+            if (responseHandle != null) responseHandles.put(data.getRequestId(), responseHandle);
             output.flush();
         } catch (IOException e) {
             //TODO Exception handling
@@ -91,14 +94,14 @@ public class Client implements Constants {
      * @param name The name of the message
      * @param data The data to be sent
      */
-    public <TData extends Message> void broadcast(String name, TData data) {
-        send(new DataCarrier<>(name, Direction.ToServer, ConversationOrigin.ClientBroadcast, client.getSocketPeerID(), SocketPeerID.Broadcast, data));
+    public <TData extends Message> void broadcast(String name, TData data, ClientResponseHandle<TData> responseHandle) {
+        send(new DataCarrier<>(name, Direction.ToServer, ConversationOrigin.ClientBroadcast, client.getSocketPeerID(), SocketPeerID.Broadcast, data), responseHandle);
     }
 
     /**
      * Add a handle function to this client
      *
-     * @param eventName     The message name
+     * @param eventName           The message name
      * @param clientMessageHandle The handling function
      */
     public <TData extends Message> void addHandle(String eventName, ClientMessageHandle<TData> clientMessageHandle) {
@@ -106,7 +109,13 @@ public class Client implements Constants {
     }
 
     <TData extends Message> void handle(DataCarrier<TData> data) {
-        if (messageHandles.containsKey(data.getName())) {
+        if (data instanceof ResponseDataCarrier) {
+            ResponseDataCarrier<TData> response = (ResponseDataCarrier<TData>) data;
+            UUID uuid = response.getResponseFor();
+            if (responseHandles.containsKey(uuid))
+                if (responseHandles.get(uuid).handle(response))
+                    responseHandles.remove(uuid);
+        } else if (messageHandles.containsKey(data.getName())) {
             System.out.println("Handle found for name " + data.getName());
             messageHandles.get(data.getName()).handle(data);
         }
@@ -140,10 +149,15 @@ public class Client implements Constants {
 
     /**
      * Gets the current clientID
+     *
      * @return UUID of this client
      */
     public UUID getClientID() {
         return client.getID();
+    }
+
+    public SocketPeerID getSocketPeerID() {
+        return client.getSocketPeerID();
     }
 
     void setSymmetricKey(SecretKey symmetricKey) {
