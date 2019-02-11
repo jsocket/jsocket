@@ -9,8 +9,10 @@
 /Users/krejcar25/IdeaProjects/jsocket/src/main/java/net/jsocket/ClientDisconnectedHandle.java
 /Users/krejcar25/IdeaProjects/jsocket/src/main/java/net/jsocket/client/ClientThread.java
 /Users/krejcar25/IdeaProjects/jsocket/src/main/java/net/jsocket/PeerIDType.java
+/Users/krejcar25/IdeaProjects/jsocket/src/main/java/net/jsocket/ResponseDataCarrier.java
 /Users/krejcar25/IdeaProjects/jsocket/src/main/java/net/jsocket/client/package-info.java
 /Users/krejcar25/IdeaProjects/jsocket/src/main/java/net/jsocket/CreateClientProperties.java
+/Users/krejcar25/IdeaProjects/jsocket/src/main/java/net/jsocket/ClientResponseHandle.java
 /Users/krejcar25/IdeaProjects/jsocket/src/main/java/net/jsocket/ConversationOrigin.java
 /Users/krejcar25/IdeaProjects/jsocket/src/main/java/net/jsocket/ClientProperties.java
 /Users/krejcar25/IdeaProjects/jsocket/src/main/java/net/jsocket/server/ServerThread.java

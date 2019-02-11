@@ -59,7 +59,7 @@ public class Client implements Constants {
      * @throws SecurityException Thrown when a messageName that is used by the library or is blacklisted for any other reason is passed to be sent
      * @see DataCarrier
      */
-    public <T extends Message> void send(DataCarrier<T> data, @Nullable ClientResponseHandle<T> responseHandle) throws SecurityException {
+    public void send(DataCarrier<? extends Message> data, @Nullable ClientResponseHandle<? extends Message> responseHandle) throws SecurityException {
         if (isHandleBlacklisted(data.getName()))
             throw new SecurityException("This message name is not allowed: " + data.getName());
         try {
@@ -94,7 +94,7 @@ public class Client implements Constants {
      * @param name The name of the message
      * @param data The data to be sent
      */
-    public <TData extends Message> void broadcast(String name, TData data, ClientResponseHandle<TData> responseHandle) {
+    public <TData extends Message> void broadcast(String name, TData data, ClientResponseHandle<? extends Message> responseHandle) {
         send(new DataCarrier<>(name, Direction.ToServer, ConversationOrigin.ClientBroadcast, client.getSocketPeerID(), SocketPeerID.Broadcast, data), responseHandle);
     }
 

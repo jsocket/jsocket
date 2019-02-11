@@ -1,10 +1,13 @@
 net/jsocket/ClientProperties.class
 net/jsocket/SocketPeerID.class
 net/jsocket/DataCarrier.class
+net/jsocket/ResponseDataCarrier.class
 net/jsocket/DataCarrier$1.class
+net/jsocket/Direction$1.class
 net/jsocket/CreateClientProperties.class
 net/jsocket/DisconnectMessage.class
 net/jsocket/ConversationReason.class
+net/jsocket/ClientResponseHandle.class
 net/jsocket/ClientMessageHandle.class
 net/jsocket/EncryptedCarrier.class
 net/jsocket/PeerIDType.class
@@ -16,6 +19,7 @@ net/jsocket/Constants.class
 net/jsocket/KeyExchangeMessage.class
 net/jsocket/server/ServerThread.class
 net/jsocket/PublicKeyMessage.class
+net/jsocket/ConversationOrigin$1.class
 net/jsocket/ConversationOrigin.class
 net/jsocket/ClientDisconnectedHandle.class
 net/jsocket/Message.class
