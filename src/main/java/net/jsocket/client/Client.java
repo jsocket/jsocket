@@ -59,7 +59,7 @@ public class Client implements Constants {
      * @throws SecurityException Thrown when a messageName that is used by the library or is blacklisted for any other reason is passed to be sent
      * @see DataCarrier
      */
-    public void send(DataCarrier<? extends Message> data, @Nullable ClientResponseHandle<? extends Message> responseHandle) throws SecurityException {
+    public <TData extends Message, TResponse extends Message> void send(DataCarrier<TData> data, @Nullable ClientResponseHandle<TResponse> responseHandle) throws SecurityException {
         if (isHandleBlacklisted(data.getName()))
             throw new SecurityException("This message name is not allowed: " + data.getName());
         try {

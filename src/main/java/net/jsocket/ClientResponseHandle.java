@@ -10,5 +10,5 @@ public interface ClientResponseHandle<TData extends Message> {
      * @param data The data received from socket
      * @return boolean if the handle should be removed, should usually be true. It might be useful to keep it there since responses to broadcasts will all respond to the same request.
      */
-    boolean handle(DataCarrier<TData> data);
+    boolean handle(ResponseDataCarrier<TData> data);
 }
