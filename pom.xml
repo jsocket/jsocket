@@ -37,7 +37,7 @@
                     <branch>refs/heads/mvn-repo</branch>                       <!-- remote branch name -->
                     <includes><include>**/*</include></includes>
                     <repositoryName>jsocket</repositoryName>      <!-- github repo name -->
-                    <repositoryOwner>krejcar25</repositoryOwner>    <!-- github username  -->
+                    <repositoryOwner>jsocket</repositoryOwner>    <!-- github username  -->
                 </configuration>
                 <executions>
                     <!-- run site-maven-plugin's 'site' target as part of the build's normal 'deploy' phase -->
